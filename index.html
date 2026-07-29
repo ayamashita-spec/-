@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Wedding Camera</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,86 +19,132 @@
     }
     * { box-sizing: border-box; }
     
-    body { 
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0; padding: 0;
       font-family: 'Noto Sans JP', sans-serif;
-      text-align: center; color: #333; margin: 0; padding: 0; overflow-x: hidden; 
-      background-image: url('https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&q=80&w=1080');
-      background-size: cover; background-position: center 20%; background-attachment: fixed;
+      text-align: center; color: #333;
+      background-color: #000;
+      overflow-x: hidden;
     }
+
+    /* アルバム背景用 */
     .bg-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(255, 255, 255, 0.75); z-index: -1; 
+      background-image: url('https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&q=80&w=1080');
+      background-size: cover; background-position: center 20%;
+      opacity: 0.2; z-index: -1; pointer-events: none;
     }
-    .glass-panel {
-      background: rgba(255, 255, 255, 0.75);
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.6);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05); border-radius: 16px;
-    }
+
+    /* ヘッダーUI（画面上部に浮遊） */
     .header { 
-      padding: 15px 0 10px; position: sticky; top: 10px; z-index: 100; 
-      margin: 0 10px 15px 10px; display: flex; flex-direction: column; align-items: center;
+      position: fixed; top: 10px; left: 10px; right: 10px;
+      z-index: 100;
+      padding: 12px 15px 10px;
+      display: flex; flex-direction: column; align-items: center;
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      border-radius: 20px;
     }
-    .header-title { margin-bottom: 8px; display: flex; flex-direction: column; align-items: center;}
+    .header-title { margin-bottom: 6px; display: flex; flex-direction: column; align-items: center;}
     .header-title h1 { 
-      margin: 0; font-size: 30px; color: var(--wedding-gold); 
-      font-family: 'Cormorant Garamond', serif; font-style: italic; letter-spacing: 1px; line-height: 1.2;
+      margin: 0; font-size: 26px; color: var(--wedding-gold); 
+      font-family: 'Cormorant Garamond', serif; font-style: italic; letter-spacing: 1px; line-height: 1.1;
     }
-    .header-title p { margin: 2px 0 0; font-size: 11px; color: #777; letter-spacing: 1px; font-weight: 500;}
-    .nav { display: flex; gap: 20px; }
+    .header-title p { margin: 2px 0 0; font-size: 10px; color: #555; letter-spacing: 1px; font-weight: 500;}
+    .nav { display: flex; gap: 15px; }
     .nav-btn { 
-      background: transparent; color: #999; border: none; font-weight: 500; cursor: pointer; 
-      font-size: 14px; padding: 6px 12px; border-radius: 20px; transition: 0.3s;
+      background: transparent; color: #666; border: none; font-weight: 500; cursor: pointer; 
+      font-size: 13px; padding: 5px 14px; border-radius: 20px; transition: 0.3s;
       -webkit-tap-highlight-color: transparent;
     }
-    .nav-btn.active { background: rgba(223, 168, 180, 0.15); color: var(--wedding-pink); font-weight: 700; }
-    
-    .section { display: none; padding: 0 10px; }
-    .section.active { display: block; animation: fadeIn 0.4s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .nav-btn.active { background: rgba(223, 168, 180, 0.25); color: #c86b7b; font-weight: 700; }
 
-    .camera-wrapper { padding-bottom: 20px; }
-    .user-profile { 
-      margin-bottom: 15px; font-size: 13px; font-weight: 500; 
-      padding: 10px 20px; border-radius: 20px; display: inline-block;
+    /* セクション共通 */
+    .section { display: none; width: 100%; }
+    .section.active { display: block; }
+
+    /* ★ 全画面カメラセクション ★ */
+    .camera-wrapper {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100dvh;
+      overflow: hidden; z-index: 1;
     }
-    .edit-name-btn { color: var(--wedding-pink); cursor: pointer; font-size: 11px; margin-left: 8px; text-decoration: underline; }
-    
+
     .camera-container {
-      position: relative; width: 100%; max-width: 360px; height: 360px;
-      margin: 0 auto 15px auto; border-radius: 20px; overflow: hidden;
-      background: #000; box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #000;
       display: flex; align-items: center; justify-content: center;
     }
 
-    #cameraVideo { width: 100%; height: 100%; object-fit: cover; }
-
-    .camera-placeholder {
-      color: #fff; font-size: 13px; padding: 20px; display: flex;
-      flex-direction: column; align-items: center; gap: 10px;
+    #cameraVideo {
+      width: 100%; height: 100%;
+      object-fit: cover; /* 全画面を覆うように拡大表示 */
     }
 
-    .camera-controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; }
+    .camera-placeholder {
+      color: #fff; font-size: 14px; padding: 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      z-index: 2;
+    }
+
+    /* 上部オーバーレイ：ユーザープロフィール */
+    .camera-top-overlay {
+      position: absolute; top: 130px; left: 0; right: 0;
+      z-index: 10; display: flex; justify-content: center;
+      pointer-events: none;
+    }
+    .user-profile { 
+      pointer-events: auto;
+      font-size: 12px; font-weight: 500; color: #fff;
+      padding: 6px 16px; border-radius: 20px;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .edit-name-btn { color: var(--wedding-pink); cursor: pointer; font-size: 11px; margin-left: 8px; text-decoration: underline; }
+
+    /* 下部オーバーレイ：コントロールUI */
+    .camera-controls-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 20px 20px calc(20px + env(safe-area-inset-bottom)) 20px;
+      z-index: 10;
+      display: flex; flex-direction: column; align-items: center;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+    }
+
+    .camera-controls {
+      display: flex; justify-content: center; align-items: center; gap: 30px;
+      width: 100%; max-width: 320px;
+    }
 
     .shutter-btn-visual { 
-      width: 80px; height: 80px; border-radius: 50%; background: #fff;
+      width: 84px; height: 84px; border-radius: 50%; background: #fff;
       border: 4px solid var(--wedding-pink); display: flex; flex-direction: column;
-      align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(223, 168, 180, 0.4);
+      align-items: center; justify-content: center;
+      box-shadow: 0 0 25px rgba(223, 168, 180, 0.6);
       color: var(--wedding-pink); cursor: pointer; transition: transform 0.1s;
       -webkit-tap-highlight-color: transparent;
     }
-    .shutter-btn-visual:active { transform: scale(0.92); }
-    .shutter-icon { font-size: 32px; line-height: 1; }
+    .shutter-btn-visual:active { transform: scale(0.90); }
+    .shutter-icon { font-size: 34px; line-height: 1; }
     .shutter-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; font-family: 'Zen Maru Gothic', sans-serif; }
     
     .switch-cam-btn {
-      background: rgba(255, 255, 255, 0.8); border: 1px solid var(--wedding-pink);
-      color: var(--wedding-pink); border-radius: 50%; width: 44px; height: 44px;
-      font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: #fff; border-radius: 50%; width: 48px; height: 48px;
+      font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .btn-spinner {
-      width: 26px; height: 26px; border: 3px solid rgba(223, 168, 180, 0.3);
+      width: 28px; height: 28px; border: 3px solid rgba(223, 168, 180, 0.3);
       border-radius: 50%; border-top-color: var(--wedding-pink);
       animation: spin 1s ease-in-out infinite; display: none;
     }
@@ -110,11 +156,19 @@
     }
     .flash-active { opacity: 1 !important; transition: opacity 0.05s ease-out !important; }
 
-    #status { font-family: 'Zen Maru Gothic', sans-serif; font-size: 13px; margin-top: 15px; color: var(--wedding-pink); min-height: 20px; font-weight: 700; }
+    #status {
+      font-family: 'Zen Maru Gothic', sans-serif; font-size: 13px; margin-top: 10px;
+      color: #fff; min-height: 20px; font-weight: 700;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
 
+    /* アルバムセクション */
+    .album-wrapper {
+      padding-top: 140px; padding-bottom: 40px;
+      min-height: 100dvh; background: #fff;
+    }
     .album-container {
-      max-width: 600px; margin: 0 auto 20px auto; background: #fff; border-radius: 12px;
-      overflow: hidden; border: 1px solid var(--insta-border); box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      max-width: 600px; margin: 0 auto; background: #fff;
     }
     .album-actions { display: none; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fff; }
     .photo-count { font-size: 13px; font-weight: 600; color: #262626; }
@@ -139,7 +193,8 @@
     .progress-text { font-size: 16px; margin-bottom: 10px; font-weight: bold; color: var(--wedding-pink); }
     .progress-subtext { font-size: 11px; color: #888; }
     
-    .modal { display: none; position: fixed; z-index: 9997; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.75); backdrop-filter: blur(5px); }
+    /* モーダル */
+    .modal { display: none; position: fixed; z-index: 9997; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
     .modal-content-wrapper { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 450px; background: #fff; border-radius: 16px; overflow: hidden; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--insta-border); }
     .modal-user-info { display: flex; align-items: center; font-weight: 600; font-size: 13px; color: #262626;}
@@ -170,32 +225,32 @@
       border: 1px solid rgba(255,255,255,0.9);
     }
     
-    /* アプリ内ブラウザ警告ダイアログ */
     .inapp-warning {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85); z-index: 10000; color: #fff; padding: 30px 20px;
+      background: rgba(0,0,0,0.88); z-index: 10000; color: #fff; padding: 30px 20px;
       flex-direction: column; align-items: center; justify-content: center; text-align: center;
     }
   </style>
 </head>
 <body>
 
-  <!-- アプリ内ブラウザ用警告 -->
+  <!-- アプリ内ブラウザ警告ダイアログ -->
   <div id="inappWarning" class="inapp-warning">
     <div style="font-size: 40px; margin-bottom: 15px;">🌐</div>
     <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: var(--wedding-pink);">Safari または Chrome で開いてください</div>
     <div style="font-size: 13px; line-height: 1.6; color: #ddd; max-width: 300px;">
-      LINEやアプリ内ブラウザではカメラが制限される場合があります。<br><br>
-      画面右上の <b>「...」</b> または <b>共有ボタン</b> から<br><b>「Safariで開く」</b> を指定してください。
+      LINEやアプリ内ブラウザではカメラ機能が正しく動作しない場合があります。<br><br>
+      画面右上の <b>「...」</b> または <b>共有ボタン</b> から<br><b>「Safariで開く」</b> を選択してください。
     </div>
   </div>
 
   <div id="flashEffect"></div>
   <div class="bg-overlay"></div>
 
-  <div class="header glass-panel">
+  <!-- フローティングヘッダー -->
+  <div class="header">
     <div class="header-title">
-      <svg width="100" height="35" viewBox="0 0 100 35" style="margin-bottom: 4px;">
+      <svg width="90" height="30" viewBox="0 0 100 35" style="margin-bottom: 2px;">
         <path d="M 35 25 C 20 25, 15 15, 10 10 C 20 15, 30 15, 35 25" fill="var(--wedding-gold)" opacity="0.5"/>
         <path d="M 65 25 C 80 25, 85 15, 90 10 C 80 15, 70 15, 65 25" fill="var(--wedding-gold)" opacity="0.5"/>
         <circle cx="45" cy="15" r="9" fill="none" stroke="var(--wedding-gold)" stroke-width="2"/>
@@ -211,33 +266,40 @@
     </div>
   </div>
 
+  <!-- ★ 全画面カメラエリア ★ -->
   <div id="camera" class="section active camera-wrapper">
-    <div class="user-profile glass-panel">
-      👤 投稿者: <span id="displayUserName" style="font-family: 'Zen Maru Gothic', sans-serif;">未設定</span>
-      <span class="edit-name-btn" onclick="askUserName()">[変更]</span>
-    </div>
-
-    <div class="camera-container glass-panel">
+    <div class="camera-container">
       <video id="cameraVideo" autoplay playsinline muted></video>
       <div id="cameraPlaceholder" class="camera-placeholder">
-        <span>📷 カメラを読み込んでいます...</span>
+        <span>📷 カメラを起動中...</span>
       </div>
     </div>
 
-    <div class="camera-controls">
-      <button class="switch-cam-btn" id="switchCamBtn" onclick="toggleCameraFacing()" style="display:none;" title="カメラ切り替え">🔄</button>
-      <div class="shutter-btn-visual" id="shutterBtn" onclick="onShutterClick()">
-        <span class="shutter-icon" id="shutterIcon">📷</span>
-        <span class="shutter-label" id="shutterLabel">SHOOT</span>
-        <div class="btn-spinner" id="shutterSpinner"></div>
+    <!-- 上部オーバーレイ：投稿者情報 -->
+    <div class="camera-top-overlay">
+      <div class="user-profile">
+        👤 投稿者: <span id="displayUserName" style="font-family: 'Zen Maru Gothic', sans-serif;">未設定</span>
+        <span class="edit-name-btn" onclick="askUserName()">[変更]</span>
       </div>
-      <div id="controlSpacer" style="width: 44px; display:none;"></div>
     </div>
 
-    <div id="status"></div>
+    <!-- 下部オーバーレイ：コントロールボタン群 -->
+    <div class="camera-controls-overlay">
+      <div class="camera-controls">
+        <button class="switch-cam-btn" id="switchCamBtn" onclick="toggleCameraFacing()" style="display:none;" title="カメラ切り替え">🔄</button>
+        <div class="shutter-btn-visual" id="shutterBtn" onclick="onShutterClick()">
+          <span class="shutter-icon" id="shutterIcon">📷</span>
+          <span class="shutter-label" id="shutterLabel">SHOOT</span>
+          <div class="btn-spinner" id="shutterSpinner"></div>
+        </div>
+        <div id="controlSpacer" style="width: 48px; display:none;"></div>
+      </div>
+      <div id="status"></div>
+    </div>
   </div>
 
-  <div id="album" class="section">
+  <!-- アルバムエリア -->
+  <div id="album" class="section album-wrapper">
     <div class="album-container">
       <div class="album-actions" id="albumActions">
         <div class="photo-count">全 <span id="photoCountNum">0</span> 枚</div>
@@ -288,7 +350,7 @@
   </div>
 
   <script>
-    // ★【重要】ここにデプロイしたGASのWebアプリURLを貼り付けます★
+    // ★ デプロイしたGASのWebアプリURLを設定します ★
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxqsiY-4oQJbS0S25y1nBDk4qi_S5R7WXi5i3DdJm4Fyc9GC9bpz0B_12HS_nqMHRU/exec";
 
     window.currentAlbumImages = [];
@@ -309,9 +371,6 @@
       }
     };
 
-    /**
-     * アプリ内ブラウザの判定
-     */
     function checkInAppBrowser() {
       const ua = navigator.userAgent || navigator.vendor || window.opera;
       const isInApp = (ua.indexOf("Line") > -1) || (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("Instagram") > -1);
@@ -325,6 +384,8 @@
      */
     async function initCamera() {
       stopCamera();
+      document.body.style.overflow = 'hidden'; // カメラモード時はスクロール禁止
+      
       const video = document.getElementById('cameraVideo');
       const placeholder = document.getElementById('cameraPlaceholder');
       const switchBtn = document.getElementById('switchCamBtn');
@@ -400,6 +461,7 @@
         initCamera();
       } else {
         stopCamera();
+        document.body.style.overflow = 'auto'; // アルバム表示時はスクロール解禁
         if (tabId === 'album') loadAlbum();
       }
     }
@@ -447,7 +509,6 @@
       const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65);
       const userName = getUserName() || 'ゲスト';
 
-      // GAS APIへPOST送信
       fetch(GAS_API_URL, {
         method: 'POST',
         body: JSON.stringify({
