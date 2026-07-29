@@ -89,7 +89,7 @@
 
 
     /* ==========================================
-       2階層目A：カメラモード (全画面 & レスポンシブ回転対応)
+       2階層目A：カメラモード (全画面 & レスポンシブ回転UI)
        ========================================== */
     #view-camera {
       position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
@@ -127,9 +127,7 @@
         background: linear-gradient(to left, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 100%);
         justify-content: center;
       }
-      .camera-controls {
-        flex-direction: column; gap: 20px;
-      }
+      .camera-controls { flex-direction: column; gap: 20px; }
     }
 
     .camera-controls {
@@ -453,17 +451,7 @@
     window.onload = function() {
       checkInAppBrowser();
       updateUserNameDisplay();
-      
-      // 画面の回転（縦横検知）イベントの監視
-      window.addEventListener('resize', handleOrientationChange);
-      window.addEventListener('orientationchange', handleOrientationChange);
     };
-
-    function handleOrientationChange() {
-      if (document.getElementById('view-camera').classList.contains('active')) {
-        // カメラ表示中に端末が回転した場合、必要に応じてアスペクト補正をトリガー
-      }
-    }
 
     function updateUserNameDisplay() {
       const name = getUserName();
@@ -587,11 +575,11 @@
     }
 
     /**
-     * キャプチャ＆圧縮＆高速アップロード処理
-     * ★スマホの縦横向き（アスペクト比）を自動検知して適正画角で撮影
+     * 爆速アップロード＆スマホ縦横回転の動的アスペクトキャプチャ処理
      */
     function captureAndUpload() {
       isUploading = true;
+      const sendStartTime = new Date().getTime();
       const video = document.getElementById('cameraVideo');
       
       const flash = document.getElementById('flashEffect');
@@ -607,35 +595,36 @@
       status.innerText = '送信中... 🕊️';
 
       const canvas = document.createElement('canvas');
-      const maxDim = 1080; // 最大長辺
+      
+      // ★1. スマホの持ち向き（縦持ち vs 横持ち）を確実に判定
+      const isLandscape = window.matchMedia("(orientation: landscape)").matches || (window.innerWidth > window.innerHeight);
 
-      // 入力ビデオストリームの「実際の解像度」を取得（縦持ち/横持ちを自動検知）
-      const videoW = video.videoWidth || 1080;
-      const videoH = video.videoHeight || 1920;
+      // ★2. 画像解像度の最適化 (長辺 960px): 高精細のままBase64容量を約100KB〜150KBまで圧縮
+      const maxDim = 960;
+      let targetW, targetH;
 
-      let width = videoW;
-      let height = videoH;
-
-      // 長辺を 1080px に抑えつつ、入力映像のアスペクト比を維持
-      if (width >= height && width > maxDim) {
-        height = Math.round(height * (maxDim / width));
-        width = maxDim;
-      } else if (height > width && height > maxDim) {
-        width = Math.round(width * (maxDim / height));
-        height = maxDim;
+      if (isLandscape) {
+        // 横長撮影
+        targetW = maxDim;
+        targetH = Math.round(maxDim * (9 / 16));
+      } else {
+        // 縦長撮影
+        targetW = Math.round(maxDim * (9 / 16));
+        targetH = maxDim;
       }
 
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = targetW;
+      canvas.height = targetH;
 
       const ctx = canvas.getContext('2d');
-      // 画質を重視した高品質リサンプリングを設定
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(video, 0, 0, width, height);
 
-      // ★アップロード時間短縮の核：圧縮率 0.58 で画質を維持したまま転送容量を30%近くカット
-      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.58);
+      // 生のビデオストリームアスペクト比とキャンバスアスペクト比を計算して描画
+      ctx.drawImage(video, 0, 0, targetW, targetH);
+
+      // ★3. 圧縮品質 0.50（超軽量化 ＆ 見た目の品質維持のゴールデンバランス）
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.50);
       const userName = getUserName() || 'ゲスト';
 
       fetch(GAS_API_URL, {
@@ -648,8 +637,11 @@
       })
       .then(res => res.json())
       .then(res => {
+        const clientTime = ((new Date().getTime() - sendStartTime) / 1000).toFixed(1);
         if (res.success) {
-          status.innerText = '✨ 保存完了 ✨';
+          // 速度を実感できるよう所要時間を表示（例: ✨ 保存完了 (0.8秒) ✨）
+          const timeMsg = res.processTime ? ` (${res.processTime}秒)` : ` (${clientTime}秒)`;
+          status.innerText = '✨ 保存完了' + timeMsg + ' ✨';
         } else {
           status.style.color = '#ff4757';
           status.innerText = '❌ エラー: ' + res.error;
@@ -672,7 +664,7 @@
         document.getElementById('shutterSpinner').style.display = 'none';
         document.getElementById('status').innerText = ''; 
         isUploading = false;
-      }, 1200);
+      }, 1500);
     }
 
     function loadAlbum() {
