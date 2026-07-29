@@ -38,9 +38,7 @@
     .view-screen.active { display: flex; animation: fadeIn 0.35s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
-    /* ==========================================
-       1階層目：表紙 (Cover View)
-       ========================================== */
+    /* 表紙 */
     #view-cover {
       flex-direction: column; align-items: center; justify-content: center;
       min-height: 100dvh; padding: 30px 20px;
@@ -87,10 +85,7 @@
     }
     .btn-mode-album:active { transform: scale(0.96); background: #fafafa; }
 
-
-    /* ==========================================
-       2階層目A：カメラモード (全画面 & レスポンシブ回転UI)
-       ========================================== */
+    /* カメラモード */
     #view-camera {
       position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
       overflow: hidden; background: #000;
@@ -112,6 +107,15 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* バックグラウンド送信インジケーター */
+    .queue-status-badge {
+      position: absolute; top: calc(15px + env(safe-area-inset-top)); right: 15px;
+      z-index: 20; padding: 6px 14px; border-radius: 20px;
+      background: rgba(223, 168, 180, 0.85); backdrop-filter: blur(8px);
+      color: #fff; font-size: 11px; font-weight: bold; display: none;
+      align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
     .camera-controls-overlay {
       position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
       padding: 20px 20px calc(20px + env(safe-area-inset-bottom)) 20px;
@@ -119,7 +123,6 @@
       background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 100%);
     }
     
-    /* 横持ち（Landscape）時のUI調整 */
     @media (orientation: landscape) {
       .camera-controls-overlay {
         top: 0; bottom: 0; left: auto; right: 0; width: 110px;
@@ -154,12 +157,6 @@
       display: flex; align-items: center; justify-content: center;
       -webkit-tap-highlight-color: transparent;
     }
-    .btn-spinner {
-      width: 28px; height: 28px; border: 3px solid rgba(223, 168, 180, 0.3);
-      border-radius: 50%; border-top-color: var(--wedding-pink);
-      animation: spin 1s ease-in-out infinite; display: none;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
     #flashEffect {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -172,10 +169,7 @@
       color: #fff; min-height: 20px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     }
 
-
-    /* ==========================================
-       2階層目B：アルバムモード
-       ========================================== */
+    /* アルバム */
     #view-album {
       flex-direction: column; width: 100%; min-height: 100dvh; background: #fff; padding-bottom: 90px;
     }
@@ -344,6 +338,11 @@
       ◀ モード選択
     </button>
 
+    <!-- バックグラウンド送信状態インジケーター -->
+    <div class="queue-status-badge" id="queueBadge">
+      ☁️ <span id="queueBadgeText">1枚を同期中...</span>
+    </div>
+
     <div class="camera-container">
       <video id="cameraVideo" autoplay playsinline muted></video>
       <div id="cameraPlaceholder" class="camera-placeholder">
@@ -357,7 +356,6 @@
         <div class="shutter-btn-visual" id="shutterBtn" onclick="onShutterClick()">
           <span class="shutter-icon" id="shutterIcon">📷</span>
           <span class="shutter-label" id="shutterLabel">SHOOT</span>
-          <div class="btn-spinner" id="shutterSpinner"></div>
         </div>
         <div id="controlSpacer" style="width: 48px; display:none;"></div>
       </div>
@@ -443,8 +441,11 @@
 
     let currentStream = null;
     let currentFacingMode = 'environment';
-    let isUploading = false;
     let pendingNavigationMode = null;
+
+    // ★【体感0秒の核】非同期送信キュー
+    const uploadQueue = [];
+    let isQueueProcessing = false;
 
     function getUserName() { return localStorage.getItem('wedding_guest_name') || ''; }
 
@@ -568,47 +569,40 @@
     }
 
     function onShutterClick() {
-      if (isUploading) return;
       if (!getUserName()) { askUserName(); return; }
       if (!currentStream) { initCamera(); return; }
-      captureAndUpload();
+      captureAndUploadAsync();
     }
 
     /**
-     * 爆速アップロード＆スマホ縦横回転の動的アスペクトキャプチャ処理
+     * ★【体感0秒イノベーション】
+     * 撮影した瞬間に即座に「✨ 保存完了」を表示し、キュー経由で非同期送信
      */
-    function captureAndUpload() {
-      isUploading = true;
-      const sendStartTime = new Date().getTime();
+    function captureAndUploadAsync() {
       const video = document.getElementById('cameraVideo');
       
+      // 1. フラッシュ表示
       const flash = document.getElementById('flashEffect');
       flash.classList.add('flash-active');
       setTimeout(() => { flash.classList.remove('flash-active'); }, 100);
 
-      document.getElementById('shutterIcon').style.display = 'none';
-      document.getElementById('shutterLabel').style.display = 'none';
-      document.getElementById('shutterSpinner').style.display = 'block';
-      
+      // 2. 画面内即時表示（わずか0.05秒で表示完了）
       const status = document.getElementById('status');
-      status.style.color = '#dfa8b4'; 
-      status.innerText = '送信中... 🕊️';
+      status.style.color = '#fff';
+      status.innerText = '✨ 保存完了 ✨';
+      setTimeout(() => { status.innerText = ''; }, 1200);
 
+      // 3. Canvasエンコード＆自動回転補正
       const canvas = document.createElement('canvas');
-      
-      // ★1. スマホの持ち向き（縦持ち vs 横持ち）を確実に判定
       const isLandscape = window.matchMedia("(orientation: landscape)").matches || (window.innerWidth > window.innerHeight);
 
-      // ★2. 画像解像度の最適化 (長辺 960px): 高精細のままBase64容量を約100KB〜150KBまで圧縮
       const maxDim = 960;
       let targetW, targetH;
 
       if (isLandscape) {
-        // 横長撮影
         targetW = maxDim;
         targetH = Math.round(maxDim * (9 / 16));
       } else {
-        // 縦長撮影
         targetW = Math.round(maxDim * (9 / 16));
         targetH = maxDim;
       }
@@ -619,52 +613,64 @@
       const ctx = canvas.getContext('2d');
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-
-      // 生のビデオストリームアスペクト比とキャンバスアスペクト比を計算して描画
       ctx.drawImage(video, 0, 0, targetW, targetH);
 
-      // ★3. 圧縮品質 0.50（超軽量化 ＆ 見た目の品質維持のゴールデンバランス）
       const compressedBase64 = canvas.toDataURL('image/jpeg', 0.50);
       const userName = getUserName() || 'ゲスト';
 
-      fetch(GAS_API_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-          action: 'upload',
-          base64Data: compressedBase64,
-          userName: userName
-        })
-      })
-      .then(res => res.json())
-      .then(res => {
-        const clientTime = ((new Date().getTime() - sendStartTime) / 1000).toFixed(1);
-        if (res.success) {
-          // 速度を実感できるよう所要時間を表示（例: ✨ 保存完了 (0.8秒) ✨）
-          const timeMsg = res.processTime ? ` (${res.processTime}秒)` : ` (${clientTime}秒)`;
-          status.innerText = '✨ 保存完了' + timeMsg + ' ✨';
-        } else {
-          status.style.color = '#ff4757';
-          status.innerText = '❌ エラー: ' + res.error;
-        }
-        resetShutterUI();
-      })
-      .catch(err => {
-        console.error('Upload Error:', err);
-        status.style.color = '#ff4757';
-        status.innerText = '❌ 通信エラーが発生しました';
-        resetShutterUI();
-      });
+      // 4. キューに追加してバックグラウンド処理開始
+      uploadQueue.push({ base64Data: compressedBase64, userName: userName });
+      processUploadQueue();
     }
 
-    function resetShutterUI() {
-      setTimeout(() => {
-        document.getElementById('shutterIcon').innerText = '📷';
-        document.getElementById('shutterIcon').style.display = 'block';
-        document.getElementById('shutterLabel').style.display = 'block';
-        document.getElementById('shutterSpinner').style.display = 'none';
-        document.getElementById('status').innerText = ''; 
-        isUploading = false;
-      }, 1500);
+    /**
+     * バックグラウンドキューの処理（順次送信）
+     */
+    async function processUploadQueue() {
+      updateQueueBadgeUI();
+      if (isQueueProcessing || uploadQueue.length === 0) return;
+
+      isQueueProcessing = true;
+
+      while (uploadQueue.length > 0) {
+        const item = uploadQueue[0];
+        try {
+          const res = await fetch(GAS_API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'upload',
+              base64Data: item.base64Data,
+              userName: item.userName
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            uploadQueue.shift(); // 成功したらキューから削除
+          } else {
+            console.error('Upload Failed, retrying...', data.error);
+            await new Promise(r => setTimeout(r, 2000)); // エラー時リトライ待機
+          }
+        } catch (e) {
+          console.error('Network error during background upload:', e);
+          await new Promise(r => setTimeout(r, 3000));
+        }
+        updateQueueBadgeUI();
+      }
+
+      isQueueProcessing = false;
+    }
+
+    function updateQueueBadgeUI() {
+      const badge = document.getElementById('queueBadge');
+      const badgeText = document.getElementById('queueBadgeText');
+      const count = uploadQueue.length;
+
+      if (count > 0) {
+        badgeText.innerText = `${count}枚を雲上に送信中...`;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
     }
 
     function loadAlbum() {
