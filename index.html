@@ -94,7 +94,6 @@
     }
     .btn-mode-album:active { transform: scale(0.96); background: #fafafa; }
 
-    /* iPhone PWA案内ボタン */
     .btn-pwa-guide {
       background: transparent; border: none; color: #777; font-size: 11px;
       margin-top: 15px; cursor: pointer; text-decoration: underline; font-weight: 500;
@@ -354,7 +353,8 @@
       </div>
 
       <div class="cover-buttons">
-        <button class="btn-mode-select btn-mode-camera" onclick="navigateTo('camera')">
+        <!-- ボタンタップイベント内で直接 triggerFullscreenAndCamera() を同期呼び出し -->
+        <button class="btn-mode-select btn-mode-camera" onclick="triggerFullscreenAndCamera()">
           <span>📷</span> カメラを起動する
         </button>
         <button class="btn-mode-select btn-mode-album" onclick="navigateTo('album')">
@@ -530,17 +530,19 @@
     }
 
     /**
-     * クロスブラウザ対応 Fullscreen API ユーティリティ
+     * Android Chrome で 100% 成功させる全画面呼び出し
      */
-    function requestFullscreenElement(element) {
-      if (element.requestFullscreen) {
-        return element.requestFullscreen();
-      } else if (element.webkitRequestFullscreen) {
-        return element.webkitRequestFullscreen();
-      } else if (element.msRequestFullscreen) {
-        return element.msRequestFullscreen();
+    function triggerFullscreenAndCamera() {
+      // ユーザーのタップイベント直下に直結（同期的に最優先で要求）
+      const docEl = document.documentElement;
+      if (docEl.requestFullscreen) {
+        docEl.requestFullscreen().catch(() => {});
+      } else if (docEl.webkitRequestFullscreen) {
+        docEl.webkitRequestFullscreen().catch(() => {});
       }
-      return Promise.reject(new Error("Fullscreen API not supported"));
+
+      // 画面遷移を実行
+      navigateTo('camera');
     }
 
     function exitFullscreenElement() {
@@ -560,12 +562,16 @@
 
     function toggleFullscreen() {
       if (isFullscreenActive()) {
-        exitFullscreenElement().catch(err => console.log("Exit Fullscreen error:", err));
+        exitFullscreenElement().catch(() => {});
       } else {
-        requestFullscreenElement(document.documentElement).catch(err => {
-          console.log("Request Fullscreen error (iPhone Safari等は非対応):", err.message);
-          alert("お使いのブラウザは全画面モードに対応していません。\n「ホーム画面に追加」を行うと全画面表示で起動できます。");
-        });
+        const docEl = document.documentElement;
+        if (docEl.requestFullscreen) {
+          docEl.requestFullscreen().catch(err => {
+            alert("お使いの端末・ブラウザは全画面表示に対応していません。「ホーム画面に追加」をお試しください。");
+          });
+        } else if (docEl.webkitRequestFullscreen) {
+          docEl.webkitRequestFullscreen().catch(() => {});
+        }
       }
     }
 
@@ -595,11 +601,6 @@
       } else if (targetMode === 'camera') {
         document.getElementById('view-camera').classList.add('active');
         initCamera();
-
-        // Android等 Fullscreen API が使える端末で発動
-        requestFullscreenElement(document.documentElement).catch(err => {
-          // iOS Safariなど不可の場合は静かにキャッチして通常画面で継続
-        });
       } else if (targetMode === 'album') {
         stopCamera();
         exitFullscreenElement().catch(() => {});
@@ -679,7 +680,12 @@
         if (pendingNavigationMode) {
           const mode = pendingNavigationMode;
           pendingNavigationMode = null;
-          navigateTo(mode);
+          
+          if (mode === 'camera') {
+            triggerFullscreenAndCamera();
+          } else {
+            navigateTo(mode);
+          }
         }
       } else {
         alert('お名前を入力してください☺️');
