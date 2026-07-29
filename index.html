@@ -1,4 +1,4 @@
-	<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="utf-8">
@@ -8,8 +8,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&family=Noto+Sans+JP:wght@300;400;500;700&family=Zen+Maru+Gothic:wght@500&display=swap" rel="stylesheet">
-  
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <style>
     :root {
@@ -40,7 +38,9 @@
     .view-screen.active { display: flex; animation: fadeIn 0.35s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
-    /* 表紙 */
+    /* ==========================================
+       1階層目：表紙 (Cover View)
+       ========================================== */
     #view-cover {
       flex-direction: column; align-items: center; justify-content: center;
       min-height: 100dvh; padding: 30px 20px;
@@ -87,7 +87,10 @@
     }
     .btn-mode-album:active { transform: scale(0.96); background: #fafafa; }
 
-    /* 全画面カメラ */
+
+    /* ==========================================
+       2階層目A：カメラモード (全画面)
+       ========================================== */
     #view-camera {
       position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
       overflow: hidden; background: #000;
@@ -157,36 +160,82 @@
       color: #fff; min-height: 20px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     }
 
-    /* アルバム */
+
+    /* ==========================================
+       2階層目B：アルバムモード（選択保存対応）
+       ========================================== */
     #view-album {
-      flex-direction: column; width: 100%; min-height: 100dvh; background: #fff;
+      flex-direction: column; width: 100%; min-height: 100dvh; background: #fff; padding-bottom: 90px;
     }
     .album-header-bar {
       position: sticky; top: 0; left: 0; width: 100%; z-index: 50;
-      padding: 12px 16px calc(12px + env(safe-area-inset-top)) 16px;
+      padding: 10px 14px calc(10px + env(safe-area-inset-top)) 14px;
       display: flex; justify-content: space-between; align-items: center;
       background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--insta-border);
     }
     .btn-album-back {
-      background: transparent; border: none; color: #333; font-size: 13px;
-      font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;
-      padding: 6px 10px; border-radius: 15px; background: #f0f0f0;
+      background: #f0f0f0; border: none; color: #333; font-size: 12px;
+      font-weight: 600; cursor: pointer; padding: 6px 12px; border-radius: 15px;
     }
-    .album-actions { display: flex; align-items: center; gap: 12px; }
-    .photo-count { font-size: 12px; font-weight: 600; color: #666; }
-    .batch-dl-btn {
-      background: var(--wedding-pink); color: #fff; border: none; padding: 7px 14px;
-      border-radius: 20px; font-weight: 600; font-size: 12px; cursor: pointer;
-      display: flex; align-items: center; gap: 4px; transition: 0.2s;
+    .album-header-right { display: flex; align-items: center; gap: 8px; }
+    .btn-select-toggle {
+      background: #fff; border: 1.5px solid var(--wedding-pink); color: var(--wedding-pink);
+      padding: 6px 12px; border-radius: 15px; font-size: 12px; font-weight: 700; cursor: pointer;
     }
-    .batch-dl-btn:active { opacity: 0.8; }
+    .btn-select-toggle.active { background: var(--wedding-pink); color: #fff; }
+
+    /* サブツールバー（全選択/選択解除） */
+    .selection-toolbar {
+      display: none; justify-content: space-between; align-items: center;
+      padding: 8px 16px; background: #faf8f5; border-bottom: 1px solid var(--insta-border);
+      font-size: 12px; color: #555; font-weight: 600;
+    }
+    .selection-toolbar-btns { display: flex; gap: 12px; }
+    .btn-sub-action { background: none; border: none; color: var(--wedding-gold); font-weight: 700; cursor: pointer; font-size: 12px; }
 
     .album-container { max-width: 600px; width: 100%; margin: 0 auto; }
     .insta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; width: 100%; background: var(--insta-border); }
-    .grid-item { background: #fff; cursor: pointer; position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; }
-    .grid-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.2s; }
-    .grid-item:active img { opacity: 0.7; }
+    
+    /* グリッドアイテムと選択オーバーレイ */
+    .grid-item {
+      background: #fff; cursor: pointer; position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .grid-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.2s, transform 0.2s; }
+    .grid-item:active img { opacity: 0.8; }
+    
+    /* チェックボックスマーク */
+    .select-checkbox {
+      display: none; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px;
+      border-radius: 50%; border: 2px solid #fff; background: rgba(0,0,0,0.3);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3); z-index: 10;
+      align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: bold;
+    }
+    .grid-item.selected .select-checkbox {
+      background: var(--wedding-pink); border-color: #fff; display: flex !important;
+    }
+    .grid-item.selected img { transform: scale(0.94); border-radius: 8px; opacity: 0.85; }
+    .select-mode-active .select-checkbox { display: flex; }
+
+    /* 下部固定：選択画像ダウンロード実行バー */
+    .bottom-download-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 60;
+      padding: 12px 20px calc(12px + env(safe-area-inset-bottom)) 20px;
+      background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--insta-border); box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+      display: flex; justify-content: space-between; align-items: center; max-width: 600px; margin: 0 auto;
+    }
+    .download-bar-info { font-size: 13px; font-weight: 700; color: #333; }
+    .btn-exec-download {
+      background: linear-gradient(135deg, #e8b4be 0%, var(--wedding-pink) 100%);
+      color: #fff; border: none; padding: 10px 20px; border-radius: 25px;
+      font-weight: 700; font-size: 13px; cursor: pointer; box-shadow: 0 4px 15px rgba(223, 168, 180, 0.4);
+      transition: transform 0.1s;
+    }
+    .btn-exec-download:active { transform: scale(0.95); }
+    .btn-exec-download:disabled { opacity: 0.5; box-shadow: none; }
+
     .loading { font-size: 13px; color: var(--wedding-pink); margin: 40px 20px; font-weight: 500; word-break: break-all; }
 
     /* モーダル & プログレス */
@@ -223,7 +272,7 @@
 
     .progress-overlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px);
+      background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(6px);
       z-index: 9998; flex-direction: column; align-items: center; justify-content: center; color: #333;
     }
     .progress-text { font-size: 16px; margin-bottom: 10px; font-weight: bold; color: var(--wedding-pink); }
@@ -315,15 +364,33 @@
       <button class="btn-album-back" onclick="navigateTo('cover')">
         ◀ モード選択
       </button>
-      <div class="album-actions" id="albumActions">
-        <div class="photo-count">全 <span id="photoCountNum">0</span> 枚</div>
-        <button class="batch-dl-btn" onclick="downloadAllImages()">📦 一括保存</button>
+      <div class="album-header-right">
+        <button class="btn-select-toggle" id="btnSelectToggle" onclick="toggleSelectMode()">
+          ☑ 選択モード
+        </button>
+      </div>
+    </div>
+
+    <!-- 選択モード時のツールバー -->
+    <div class="selection-toolbar" id="selectionToolbar">
+      <span id="selectedCountText">0 枚選択中</span>
+      <div class="selection-toolbar-btns">
+        <button class="btn-sub-action" onclick="selectAllImages()">すべて選択</button>
+        <button class="btn-sub-action" onclick="deselectAllImages()">解除</button>
       </div>
     </div>
 
     <div class="album-container">
       <div id="albumStatus" class="loading"></div>
       <div class="insta-grid" id="photoGrid"></div>
+    </div>
+
+    <!-- 下部固定：ダウンロード実行バー -->
+    <div class="bottom-download-bar" id="bottomDownloadBar">
+      <div class="download-bar-info" id="downloadBarInfo">全 0 枚</div>
+      <button class="btn-exec-download" id="btnExecDownload" onclick="downloadSelectedOrAll()">
+        ⬇️ 写真を保存する
+      </button>
     </div>
   </div>
 
@@ -366,6 +433,9 @@
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxqsiY-4oQJbS0S25y1nBDk4qi_S5R7WXi5i3DdJm4Fyc9GC9bpz0B_12HS_nqMHRU/exec";
 
     window.currentAlbumImages = [];
+    window.selectedImageIds = new Set();
+    let isSelectMode = false;
+
     let currentStream = null;
     let currentFacingMode = 'environment';
     let isUploading = false;
@@ -573,14 +643,15 @@
     }
 
     /**
-     * アルバム読み込み（POSTリクエスト化 & 詳細エラー可視化）
+     * アルバム読み込み＆グリッド生成
      */
     function loadAlbum() {
       const grid = document.getElementById('photoGrid');
       const status = document.getElementById('albumStatus');
-      const actions = document.getElementById('albumActions');
       
-      grid.innerHTML = ''; actions.style.display = 'none'; status.innerText = '読み込み中...';
+      grid.innerHTML = '';
+      status.innerText = '読み込み中...';
+      window.selectedImageIds.clear();
 
       fetch(GAS_API_URL, {
         method: 'POST',
@@ -594,22 +665,14 @@
         }
         if (!response.data || response.data.length === 0) {
           status.innerText = 'まだ写真がありません🥲';
+          updateDownloadBarUI();
           return;
         }
         
         status.innerText = ''; 
         window.currentAlbumImages = response.data;
-        document.getElementById('photoCountNum').innerText = response.data.length;
-        actions.style.display = 'flex';
-
-        response.data.forEach(imgData => {
-          const itemDiv = document.createElement('div');
-          itemDiv.className = 'grid-item';
-          const img = document.createElement('img');
-          img.src = imgData.thumbnailUrl; img.loading = 'lazy';
-          img.onclick = function() { openModal(imgData); };
-          itemDiv.appendChild(img); grid.appendChild(itemDiv);
-        });
+        renderGrid();
+        updateDownloadBarUI();
       })
       .catch(err => {
         console.error('Get Album Error:', err);
@@ -617,27 +680,151 @@
       });
     }
 
-    async function downloadAllImages() {
-      const images = window.currentAlbumImages;
-      if (!images || images.length === 0) return;
-      if (!confirm(`全 ${images.length} 枚の写真を一括ダウンロードしますか？\n※Wi-Fi環境をおすすめします`)) return;
+    /**
+     * グリッドアイテムの描画
+     */
+    function renderGrid() {
+      const grid = document.getElementById('photoGrid');
+      grid.innerHTML = '';
+
+      if (isSelectMode) {
+        grid.classList.add('select-mode-active');
+      } else {
+        grid.classList.remove('select-mode-active');
+      }
+
+      window.currentAlbumImages.forEach(imgData => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'grid-item';
+        itemDiv.dataset.id = imgData.id;
+
+        if (window.selectedImageIds.has(imgData.id)) {
+          itemDiv.classList.add('selected');
+        }
+
+        const img = document.createElement('img');
+        img.src = imgData.thumbnailUrl;
+        img.loading = 'lazy';
+
+        const checkbox = document.createElement('div');
+        checkbox.className = 'select-checkbox';
+        checkbox.innerText = '✓';
+
+        itemDiv.appendChild(img);
+        itemDiv.appendChild(checkbox);
+
+        itemDiv.onclick = function() {
+          if (isSelectMode) {
+            toggleImageSelection(imgData.id, itemDiv);
+          } else {
+            openModal(imgData);
+          }
+        };
+
+        grid.appendChild(itemDiv);
+      });
+    }
+
+    /**
+     * 選択モードのトグル切替
+     */
+    function toggleSelectMode() {
+      isSelectMode = !isSelectMode;
+      const btn = document.getElementById('btnSelectToggle');
+      const toolbar = document.getElementById('selectionToolbar');
+
+      if (isSelectMode) {
+        btn.classList.add('active');
+        btn.innerText = '完了';
+        toolbar.style.display = 'flex';
+      } else {
+        btn.classList.remove('active');
+        btn.innerText = '☑ 選択モード';
+        toolbar.style.display = 'none';
+      }
+      renderGrid();
+      updateDownloadBarUI();
+    }
+
+    /**
+     * 単一画像の選択・解除切り替え
+     */
+    function toggleImageSelection(id, element) {
+      if (window.selectedImageIds.has(id)) {
+        window.selectedImageIds.delete(id);
+        element.classList.remove('selected');
+      } else {
+        window.selectedImageIds.add(id);
+        element.classList.add('selected');
+      }
+      updateDownloadBarUI();
+    }
+
+    function selectAllImages() {
+      window.currentAlbumImages.forEach(img => window.selectedImageIds.add(img.id));
+      renderGrid();
+      updateDownloadBarUI();
+    }
+
+    function deselectAllImages() {
+      window.selectedImageIds.clear();
+      renderGrid();
+      updateDownloadBarUI();
+    }
+
+    /**
+     * ダウンロードバーのUI更新
+     */
+    function updateDownloadBarUI() {
+      const infoText = document.getElementById('downloadBarInfo');
+      const btnExec = document.getElementById('btnExecDownload');
+      const toolbarText = document.getElementById('selectedCountText');
+      const total = window.currentAlbumImages.length;
+      const selectedCount = window.selectedImageIds.size;
+
+      if (isSelectMode) {
+        infoText.innerText = `全 ${total} 枚中 ${selectedCount} 枚選択`;
+        toolbarText.innerText = `${selectedCount} 枚選択中`;
+        btnExec.innerText = `⬇️ 選択した ${selectedCount} 枚を保存`;
+        btnExec.disabled = selectedCount === 0;
+      } else {
+        infoText.innerText = `全 ${total} 枚の写真`;
+        btnExec.innerText = `⬇️ 全 ${total} 枚を保存`;
+        btnExec.disabled = total === 0;
+      }
+    }
+
+    /**
+     * 選択済みまたは全画像の順次JPEG保存実行（ZIP非使用・1枚ずつダイレクト保存）
+     */
+    async function downloadSelectedOrAll() {
+      let targets = [];
+      if (isSelectMode && window.selectedImageIds.size > 0) {
+        targets = window.currentAlbumImages.filter(img => window.selectedImageIds.has(img.id));
+      } else {
+        targets = window.currentAlbumImages;
+      }
+
+      if (!targets || targets.length === 0) return;
+
+      const total = targets.length;
+      if (!confirm(`${total} 枚の写真を保存しますか？\n※端末の写真（ダウンロード）フォルダーへ1枚ずつ順次保存されます。`)) return;
 
       const overlay = document.getElementById('progressOverlay');
       const progressText = document.getElementById('progressText');
       overlay.style.display = 'flex';
-      
-      const zip = new JSZip();
-      let successCount = 0;
-      const total = images.length;
+
       const chunkSize = 10;
+      let successCount = 0;
 
       try {
         for (let i = 0; i < total; i += chunkSize) {
-          const chunk = images.slice(i, i + chunkSize);
+          const chunk = targets.slice(i, i + chunkSize);
           const chunkIds = chunk.map(img => img.id);
-          
-          progressText.innerText = `ダウンロード中... ${Math.min(i + chunkSize, total)}/${total}`;
 
+          progressText.innerText = `画像データ取得中... ${Math.min(i + chunkSize, total)}/${total}`;
+
+          // GASから10枚単位でBase64取得
           const res = await fetch(GAS_API_URL, {
             method: 'POST',
             body: JSON.stringify({ action: 'getBatchBase64', fileIds: chunkIds })
@@ -645,28 +832,62 @@
           const response = await res.json();
 
           if (response.success && response.data) {
-            chunk.forEach(img => {
-              if (response.data[img.id]) {
-                zip.file(img.name, response.data[img.id], { base64: true });
+            for (let j = 0; j < chunk.length; j++) {
+              const img = chunk[j];
+              const base64Data = response.data[img.id];
+
+              if (base64Data) {
+                const currentIndex = i + j + 1;
+                progressText.innerText = `保存中 (${currentIndex}/${total} 枚目)...`;
+
+                // 1枚ずつJPEG形式でブラウザ直接ダウンロード発火
+                triggerJpegDownload(base64Data, img.name);
                 successCount++;
+
+                // モバイルブラウザの連続ポッフアップブロックを避けるための短いウエイト
+                await new Promise(r => setTimeout(r, 500));
               }
-            });
+            }
           }
         }
 
-        if (successCount === 0) { alert('画像の取得に失敗しました。'); overlay.style.display = 'none'; return; }
-
-        progressText.innerText = 'ZIP圧縮中... 📦';
-        const content = await zip.generateAsync({ type: "blob" });
-        const url = window.URL.createObjectURL(content);
-        const a = document.createElement('a'); a.style.display = 'none'; a.href = url;
-        a.download = `Wedding_Album_${new Date().getTime()}.zip`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url);
-        progressText.innerText = '✅ 完了！';
+        if (successCount === 0) {
+          alert('画像の取得に失敗しました。');
+        } else {
+          progressText.innerText = '✅ 保存完了！';
+        }
       } catch (e) {
-        alert('ZIPの作成に失敗しました。');
+        console.error('Download Error:', e);
+        alert('保存処理の途中でエラーが発生しました。');
       } finally {
         setTimeout(() => { overlay.style.display = 'none'; }, 1500);
+      }
+    }
+
+    /**
+     * Base64からJPEG Blobを生成して1枚ずつダウンロード発火
+     */
+    function triggerJpegDownload(base64Data, fileName) {
+      try {
+        const binaryString = window.atob(base64Data);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], { type: "image/jpeg" });
+        const url = window.URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = fileName.endsWith('.jpg') ? fileName : `${fileName}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error('JPEG trigger error:', e);
       }
     }
 
@@ -692,13 +913,9 @@
       .then(res => res.json())
       .then(response => {
         if (response.success && response.data) {
-          const binaryString = window.atob(response.data); const len = binaryString.length; const bytes = new Uint8Array(len);
-          for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
-          const blob = new Blob([bytes], {type: "image/jpeg"});
-          const url = window.URL.createObjectURL(blob); const a = document.createElement('a');
-          a.style.display = 'none'; a.href = url; a.download = fileName;
-          document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url);
-          btnElement.innerHTML = '✨ 完了'; setTimeout(() => { btnElement.innerHTML = originalText; btnElement.disabled = false; }, 2000);
+          triggerJpegDownload(response.data, fileName);
+          btnElement.innerHTML = '✨ 完了';
+          setTimeout(() => { btnElement.innerHTML = originalText; btnElement.disabled = false; }, 2000);
         } else {
           alert('保存に失敗しました🥲'); btnElement.innerHTML = originalText; btnElement.disabled = false;
         }
