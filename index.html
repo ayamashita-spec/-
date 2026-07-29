@@ -5,10 +5,13 @@
   <title>Wedding Camera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   
+  <!-- PWA & WebApp化メタタグ -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WedCam">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="./manifest.json">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,6 +32,7 @@
       text-align: center; color: #333;
       background-color: #faf8f5;
       overflow-x: hidden;
+      -webkit-touch-callout: none;
     }
 
     .glass-panel {
@@ -43,9 +47,7 @@
     .view-screen.active { display: flex; animation: fadeIn 0.35s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
-    /* ==========================================
-       1階層目：表紙 (Cover View)
-       ========================================== */
+    /* 表紙 */
     #view-cover {
       flex-direction: column; align-items: center; justify-content: center;
       min-height: 100dvh; padding: 30px 20px;
@@ -68,15 +70,15 @@
     .cover-title p { margin: 5px 0 25px; font-size: 12px; color: #666; letter-spacing: 2px; font-weight: 500; }
     
     .cover-user-box {
-      margin-bottom: 30px; font-size: 13px; font-weight: 500;
+      margin-bottom: 25px; font-size: 13px; font-weight: 500;
       padding: 10px 20px; border-radius: 30px; background: rgba(255,255,255,0.85);
       border: 1px solid rgba(223, 168, 180, 0.4); display: inline-flex; align-items: center; gap: 6px;
     }
     .edit-name-btn { color: var(--wedding-pink); cursor: pointer; font-size: 11px; text-decoration: underline; }
 
-    .cover-buttons { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+    .cover-buttons { width: 100%; display: flex; flex-direction: column; gap: 14px; }
     .btn-mode-select {
-      width: 100%; padding: 18px 20px; border-radius: 35px; border: none;
+      width: 100%; padding: 16px 20px; border-radius: 35px; border: none;
       font-size: 15px; font-weight: 700; cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 10px;
       transition: all 0.2s ease; box-shadow: 0 6px 20px rgba(0,0,0,0.06);
@@ -92,12 +94,15 @@
     }
     .btn-mode-album:active { transform: scale(0.96); background: #fafafa; }
 
+    /* iPhone PWA案内ボタン */
+    .btn-pwa-guide {
+      background: transparent; border: none; color: #777; font-size: 11px;
+      margin-top: 15px; cursor: pointer; text-decoration: underline; font-weight: 500;
+    }
 
-    /* ==========================================
-       2階層目A：カメラモード (全画面 & Fullscreen API)
-       ========================================== */
+    /* 全画面カメラモード */
     #view-camera {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
       overflow: hidden; background: #000;
     }
     .camera-container { width: 100%; height: 100%; position: relative; }
@@ -117,13 +122,12 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* 全画面化トグルボタン */
     .btn-fullscreen-toggle {
       position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 12px;
       z-index: 25; padding: 6px 12px; border-radius: 20px;
       background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.3); color: #fff;
-      font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -173,9 +177,7 @@
         background: linear-gradient(to left, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
         justify-content: center;
       }
-      .camera-controls {
-        flex-direction: column; gap: 16px; width: auto;
-      }
+      .camera-controls { flex-direction: column; gap: 16px; width: auto; }
       .shutter-btn-visual { width: 64px; height: 64px; border-width: 3px; }
       .shutter-icon { font-size: 24px; }
       .shutter-label { font-size: 8px; }
@@ -359,6 +361,10 @@
           <span>🖼️</span> 共有アルバムを見る
         </button>
       </div>
+
+      <button class="btn-pwa-guide" onclick="showPwaGuide()">
+        💡 アドレスバーなしでアプリっぽく開く方法
+      </button>
     </div>
   </div>
 
@@ -368,7 +374,6 @@
       ◀ モード選択
     </button>
 
-    <!-- 手動全画面切替ボタン -->
     <button class="btn-fullscreen-toggle" id="btnFullscreenToggle" onclick="toggleFullscreen()">
       ⛶ 全画面
     </button>
@@ -460,6 +465,23 @@
     </div>
   </div>
 
+  <!-- PWAガイドモーダル -->
+  <div id="pwaModal" class="modal" onclick="document.getElementById('pwaModal').style.display='none'">
+    <div class="modal-content-wrapper glass-panel" style="padding: 30px 20px; text-align: center;" onclick="event.stopPropagation()">
+      <div style="font-size: 32px; margin-bottom: 10px;">📲</div>
+      <div style="font-size: 16px; font-weight: bold; color: var(--wedding-pink); margin-bottom: 15px;">全画面アプリとして起動する方法</div>
+      <div style="font-size: 12px; line-height: 1.8; color: #555; text-align: left; margin-bottom: 20px; background: rgba(0,0,0,0.03); padding: 15px; border-radius: 12px;">
+        <b>iPhone (Safari) の場合：</b><br>
+        1. 下部の共有ボタン（<span style="font-size:14px;">iOS共有アイコン</span>）をタップ<br>
+        2. 「<b>ホーム画面に追加</b>」を選択<br><br>
+        <b>Android (Chrome) の場合：</b><br>
+        1. 右上のメニュー（︙）をタップ<br>
+        2. 「<b>ホーム画面に追加</b>」または「<b>アプリをインストール</b>」を選択
+      </div>
+      <button onclick="document.getElementById('pwaModal').style.display='none'" class="name-submit-btn">閉じる</button>
+    </div>
+  </div>
+
   <!-- プログレスオーバーレイ -->
   <div id="progressOverlay" class="progress-overlay">
     <div class="progress-text" id="progressText">準備中...</div>
@@ -486,7 +508,6 @@
       checkInAppBrowser();
       updateUserNameDisplay();
 
-      // Fullscreen 状態変更イベントの監視
       document.addEventListener('fullscreenchange', updateFullscreenButtonUI);
       document.addEventListener('webkitfullscreenchange', updateFullscreenButtonUI);
     };
@@ -504,13 +525,17 @@
       }
     }
 
+    function showPwaGuide() {
+      document.getElementById('pwaModal').style.display = 'block';
+    }
+
     /**
      * クロスブラウザ対応 Fullscreen API ユーティリティ
      */
     function requestFullscreenElement(element) {
       if (element.requestFullscreen) {
         return element.requestFullscreen();
-      } else if (element.webkitRequestFullscreen) { // Safari / iOS
+      } else if (element.webkitRequestFullscreen) {
         return element.webkitRequestFullscreen();
       } else if (element.msRequestFullscreen) {
         return element.msRequestFullscreen();
@@ -537,7 +562,10 @@
       if (isFullscreenActive()) {
         exitFullscreenElement().catch(err => console.log("Exit Fullscreen error:", err));
       } else {
-        requestFullscreenElement(document.documentElement).catch(err => console.log("Request Fullscreen error:", err));
+        requestFullscreenElement(document.documentElement).catch(err => {
+          console.log("Request Fullscreen error (iPhone Safari等は非対応):", err.message);
+          alert("お使いのブラウザは全画面モードに対応していません。\n「ホーム画面に追加」を行うと全画面表示で起動できます。");
+        });
       }
     }
 
@@ -568,9 +596,9 @@
         document.getElementById('view-camera').classList.add('active');
         initCamera();
 
-        // ★ユーザーがボタンをタップした瞬間（User Gesture内）で Fullscreen API を呼出★
+        // Android等 Fullscreen API が使える端末で発動
         requestFullscreenElement(document.documentElement).catch(err => {
-          console.warn("自動全画面表示に失敗しました (端末非対応または拒否):", err.message);
+          // iOS Safariなど不可の場合は静かにキャッチして通常画面で継続
         });
       } else if (targetMode === 'album') {
         stopCamera();
