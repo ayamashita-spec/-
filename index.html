@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+	<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="utf-8">
@@ -36,14 +36,11 @@
       border-radius: 20px;
     }
 
-    /* 画面切り替えアニメーション */
     .view-screen { display: none; width: 100%; height: 100%; }
     .view-screen.active { display: flex; animation: fadeIn 0.35s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
-    /* ==========================================
-       1階層目：表紙 (Cover View)
-       ========================================== */
+    /* 表紙 */
     #view-cover {
       flex-direction: column; align-items: center; justify-content: center;
       min-height: 100dvh; padding: 30px 20px;
@@ -90,10 +87,7 @@
     }
     .btn-mode-album:active { transform: scale(0.96); background: #fafafa; }
 
-
-    /* ==========================================
-       2階層目A：カメラモード (全画面)
-       ========================================== */
+    /* 全画面カメラ */
     #view-camera {
       position: fixed; top: 0; left: 0; width: 100%; height: 100dvh;
       overflow: hidden; background: #000;
@@ -105,7 +99,6 @@
       color: #fff; font-size: 14px; text-align: center; width: 100%;
     }
 
-    /* フローティング「モード選択に戻る」ボタン */
     .btn-floating-back {
       position: absolute; top: calc(15px + env(safe-area-inset-top)); left: 15px;
       z-index: 20; padding: 8px 16px; border-radius: 20px;
@@ -116,7 +109,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* 下部シャッターコントローラー */
     .camera-controls-overlay {
       position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
       padding: 20px 20px calc(20px + env(safe-area-inset-bottom)) 20px;
@@ -165,10 +157,7 @@
       color: #fff; min-height: 20px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
     }
 
-
-    /* ==========================================
-       2階層目B：アルバムモード
-       ========================================== */
+    /* アルバム */
     #view-album {
       flex-direction: column; width: 100%; min-height: 100dvh; background: #fff;
     }
@@ -198,7 +187,7 @@
     .grid-item { background: #fff; cursor: pointer; position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; }
     .grid-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.2s; }
     .grid-item:active img { opacity: 0.7; }
-    .loading { font-size: 13px; color: var(--wedding-pink); margin: 40px 0; font-weight: 500; }
+    .loading { font-size: 13px; color: var(--wedding-pink); margin: 40px 20px; font-weight: 500; word-break: break-all; }
 
     /* モーダル & プログレス */
     .modal { display: none; position: fixed; z-index: 9997; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
@@ -249,7 +238,7 @@
 </head>
 <body>
 
-  <!-- アプリ内ブラウザ警告ダイアログ -->
+  <!-- アプリ内ブラウザ警告 -->
   <div id="inappWarning" class="inapp-warning">
     <div style="font-size: 40px; margin-bottom: 15px;">🌐</div>
     <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: var(--wedding-pink);">Safari または Chrome で開いてください</div>
@@ -261,9 +250,7 @@
 
   <div id="flashEffect"></div>
 
-  <!-- ==========================================
-       1階層目：表紙 (Cover View)
-       ========================================== -->
+  <!-- 1階層目：表紙 (Cover View) -->
   <div id="view-cover" class="view-screen active">
     <div class="cover-bg-overlay"></div>
     <div class="cover-content glass-panel">
@@ -295,12 +282,8 @@
     </div>
   </div>
 
-
-  <!-- ==========================================
-       2階層目A：カメラモード (Camera View)
-       ========================================== -->
+  <!-- 2階層目A：カメラモード -->
   <div id="view-camera" class="view-screen">
-    <!-- モード選択に戻るボタン -->
     <button class="btn-floating-back" onclick="navigateTo('cover')">
       ◀ モード選択
     </button>
@@ -312,7 +295,6 @@
       </div>
     </div>
 
-    <!-- 下部シャッターコントローラー -->
     <div class="camera-controls-overlay">
       <div class="camera-controls">
         <button class="switch-cam-btn" id="switchCamBtn" onclick="toggleCameraFacing()" style="display:none;" title="カメラ切り替え">🔄</button>
@@ -327,10 +309,7 @@
     </div>
   </div>
 
-
-  <!-- ==========================================
-       2階層目B：アルバムモード (Album View)
-       ========================================== -->
+  <!-- 2階層目B：アルバムモード -->
   <div id="view-album" class="view-screen">
     <div class="album-header-bar">
       <button class="btn-album-back" onclick="navigateTo('cover')">
@@ -347,7 +326,6 @@
       <div class="insta-grid" id="photoGrid"></div>
     </div>
   </div>
-
 
   <!-- プレビューモーダル -->
   <div id="imageModal" class="modal" onclick="closeModal(event)">
@@ -385,7 +363,6 @@
   </div>
 
   <script>
-    // 指定されたGAS Web App URL
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxqsiY-4oQJbS0S25y1nBDk4qi_S5R7WXi5i3DdJm4Fyc9GC9bpz0B_12HS_nqMHRU/exec";
 
     window.currentAlbumImages = [];
@@ -414,10 +391,6 @@
       }
     }
 
-    /**
-     * 画面階層ナビゲーション制御
-     * @param {'cover'|'camera'|'album'} targetMode
-     */
     function navigateTo(targetMode) {
       if ((targetMode === 'camera' || targetMode === 'album') && !getUserName()) {
         pendingNavigationMode = targetMode;
@@ -442,9 +415,6 @@
       }
     }
 
-    /**
-     * WebRTC カメラ初期化
-     */
     async function initCamera() {
       stopCamera();
       document.body.style.overflow = 'hidden';
@@ -602,6 +572,9 @@
       }, 1500);
     }
 
+    /**
+     * アルバム読み込み（POSTリクエスト化 & 詳細エラー可視化）
+     */
     function loadAlbum() {
       const grid = document.getElementById('photoGrid');
       const status = document.getElementById('albumStatus');
@@ -609,30 +582,39 @@
       
       grid.innerHTML = ''; actions.style.display = 'none'; status.innerText = '読み込み中...';
 
-      fetch(`${GAS_API_URL}?action=getAlbum`)
-        .then(res => res.json())
-        .then(response => {
-          if (!response.success) { status.innerText = '❌ ' + response.error; return; }
-          if (response.data.length === 0) { status.innerText = 'まだ写真がありません🥲'; return; }
-          
-          status.innerText = ''; 
-          window.currentAlbumImages = response.data;
-          document.getElementById('photoCountNum').innerText = response.data.length;
-          actions.style.display = 'flex';
+      fetch(GAS_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'getAlbum' })
+      })
+      .then(res => res.json())
+      .then(response => {
+        if (!response.success) {
+          status.innerText = '❌ ' + (response.error || 'アルバムの取得に失敗しました。');
+          return;
+        }
+        if (!response.data || response.data.length === 0) {
+          status.innerText = 'まだ写真がありません🥲';
+          return;
+        }
+        
+        status.innerText = ''; 
+        window.currentAlbumImages = response.data;
+        document.getElementById('photoCountNum').innerText = response.data.length;
+        actions.style.display = 'flex';
 
-          response.data.forEach(imgData => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'grid-item';
-            const img = document.createElement('img');
-            img.src = imgData.thumbnailUrl; img.loading = 'lazy';
-            img.onclick = function() { openModal(imgData); };
-            itemDiv.appendChild(img); grid.appendChild(itemDiv);
-          });
-        })
-        .catch(err => {
-          console.error('Get Album Error:', err);
-          status.innerText = '❌ 取得に失敗しました';
+        response.data.forEach(imgData => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'grid-item';
+          const img = document.createElement('img');
+          img.src = imgData.thumbnailUrl; img.loading = 'lazy';
+          img.onclick = function() { openModal(imgData); };
+          itemDiv.appendChild(img); grid.appendChild(itemDiv);
         });
+      })
+      .catch(err => {
+        console.error('Get Album Error:', err);
+        status.innerText = '❌ 通信エラーが発生しました: ' + err.message;
+      });
     }
 
     async function downloadAllImages() {
